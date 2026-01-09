@@ -4,10 +4,10 @@ metadata:
   namespace: kube-system
   name: csi-moosefs-config
 data:
-  master_host: {{ .Values.master.host }}
-  master_port: {{ .Values.master.port }}
-  k8s_root_dir: {{ .Values.csi.root }}
-  driver_working_dir: {{ .Values.csi.working }}
+  master_host: "{{ .Values.master.host }}"
+  master_port: "{{ .Values.master.port }}"
+  k8s_root_dir: "{{ .Values.csi.root }}"
+  driver_working_dir: "{{ .Values.csi.working }}"
   mount_count: "1"
-  mfs_logging: {{ .Values.csi.logging }}
+  mfs_logging: "{{ .Values.csi.logging }}"
   mfs_mount_options: "nosuid,nodev" # Ensure NO password options here
