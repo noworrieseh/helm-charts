@@ -4,7 +4,7 @@ description: A Helm chart for moosefs-csi
 
 type: application
 
-version: 0.1.1
+version: 0.1.2
 icon: https://moosefs.com/wp-content/themes/Moose/img/logo3.png
 
 appVersion: "1.16.0"
