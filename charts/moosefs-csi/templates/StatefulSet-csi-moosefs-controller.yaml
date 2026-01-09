@@ -1,0 +1,126 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: csi-moosefs-controller
+  namespace: kube-system
+spec:
+  serviceName: "csi-moosefs"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-moosefs-controller
+      role: csi-moosefs
+  template:
+    metadata:
+      labels:
+        app: csi-moosefs-controller
+        role: csi-moosefs
+    spec:
+      priorityClassName: system-cluster-critical
+      serviceAccount: csi-moosefs-controller-sa
+      hostNetwork: true
+      dnsPolicy: {{ .Values.dns }}
+      containers:
+        # provisioner
+        - name: csi-provisioner
+          image: registry.k8s.io/sig-storage/csi-provisioner:v5.2.0
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--v=5"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        # attacher
+        - name: csi-attacher
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.8.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        # resizer
+        - name: csi-resizer
+          image: registry.k8s.io/sig-storage/csi-resizer:v2.0.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+        # MooseFS CSI Plugin
+        - name: csi-moosefs-plugin
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: moosefs/moosefs-csi:0.9.8-4.58.3
+          args:
+            - "--mode=controller"
+            - "--csi-endpoint=$(CSI_ENDPOINT)"
+            - "--master-host=$(MASTER_HOST)"
+            - "--master-port=$(MASTER_PORT)"
+            - "--root-dir=$(ROOT_DIR)"
+            - "--plugin-data-dir=$(WORKING_DIR)"
+            - "--mfs-logging=$(MFS_LOGGING)"
+            - "--mfs-mount-options=$(MFS_MOUNT_OPTIONS)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: MASTER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: master_host
+            - name: MASTER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: master_port
+            - name: ROOT_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: k8s_root_dir
+            - name: WORKING_DIR
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: driver_working_dir
+            - name: MFS_LOGGING
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: mfs_logging
+            - name: MFS_MOUNT_OPTIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: csi-moosefs-config
+                  key: mfs_mount_options
+          imagePullPolicy: "Always"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+            - name: mountpoint-dir # <--- ADD THIS
+              mountPath: /var/lib/kubelet/plugins/csi.moosefs.com
+              mountPropagation: Bidirectional # <--- CRITICAL for CSI
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+        - name: mountpoint-dir # <--- ADD THIS
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.moosefs.com
+            type: DirectoryOrCreate

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: moosefs-csi
+description: A Helm chart for moosefs-csi
+
+type: application
+
+version: 0.1.0
+icon: https://moosefs.com/wp-content/themes/Moose/img/logo3.png
+
+appVersion: "1.16.0"
