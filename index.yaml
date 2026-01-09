@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  moosefs-csi:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2026-01-09T04:06:45.126957335Z"
+    description: A Helm chart for moosefs-csi
+    digest: aacf06edec28cdbb7a66096c68c12338981e3354eee1c63d72c9160401bf44b4
+    icon: https://moosefs.com/wp-content/themes/Moose/img/logo3.png
+    name: moosefs-csi
+    type: application
+    urls:
+    - https://github.com/noworrieseh/helm-charts/releases/download/moosefs-csi-0.1.1/moosefs-csi-0.1.1.tgz
+    version: 0.1.1
+generated: "2026-01-09T04:06:45.126984746Z"
